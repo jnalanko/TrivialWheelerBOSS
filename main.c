@@ -60,7 +60,7 @@ int64_t search(WheelerBOSS* boss, const char* kmer, int64_t k){
 
     }
     
-    assert(left == right); // If this is wrong the WheelerBOSS is corrupt or the k is wrong.
+    assert(left == right); // If this is wrong then the WheelerBOSS is corrupt or the k is wrong.
     return left; // The colexicographic rank of the k-mer
 }
 
