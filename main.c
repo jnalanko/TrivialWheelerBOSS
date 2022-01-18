@@ -38,13 +38,18 @@ int64_t search(WheelerBOSS* boss, const char* kmer, int64_t k){
     int64_t right = boss->n_nodes-1;
     for(int64_t i = 0; i < k; i++){
         char c = kmer[i];
+
         int64_t start = Select(boss->O, '1', left+1) - left;
+
         int64_t end;
         if(right == boss->n_nodes-1) end = boss->n_edges-1; // Last position
         else end = Select(boss->O, '1', right+2) - right - 2;
+
         if(end < start) return -1; // K-mer not found
+
         int64_t edge_left = Rank(boss->GBWT, c, start);
         int64_t edge_right = Rank(boss->GBWT, c, end+1);
+
         if(edge_left == edge_right) return -1; // K-mer not found
 
         int64_t edge_wheeler_left = boss->C[c] + edge_left;
@@ -55,7 +60,7 @@ int64_t search(WheelerBOSS* boss, const char* kmer, int64_t k){
 
     }
     
-    assert(left == right); // If this is wrong then the WheelerBOSS structure is corrupt
+    assert(left == right); // If this is wrong the WheelerBOSS is corrupt or the k is wrong.
     return left; // The colexicographic rank of the k-mer
 }
 
