@@ -31,8 +31,6 @@ int64_t Select(char* array, char symbol, int64_t count){
         if(array[i] == symbol) occurrences_seen++;
         if(occurrences_seen == count) return i;
     }
-    assert(0); // Query is outside of valid range of queries
-    return -1; // Make compiler warnings go away
 }
 
 int64_t search(WheelerBOSS* boss, const char* kmer, int64_t k){
