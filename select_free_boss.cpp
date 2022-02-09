@@ -9,10 +9,12 @@ using namespace std;
 
 struct SelectFreeBOSS{
 
-    string GBWT_A; // Bit vector
-    string GBWT_C; // Bit vector
-    string GBWT_G; // Bit vector
-    string GBWT_T; // Bit vector
+
+    string GBWT[256]; // One bit vector for each character. Can be empty bit vector if the character does not occur
+    //string GBWT_A; // Bit vector
+    //string GBWT_C; // Bit vector
+    //string GBWT_G; // Bit vector
+    //string GBWT_T; // Bit vector
     vector<int> C; // C-array (cumulative character counts)
     int n_nodes;
 
@@ -111,63 +113,40 @@ SelectFreeBOSS construct(const vector<string>& input, int k){
         }
     }
 
-    string GBWT_A, GBWT_C, GBWT_G, GBWT_T, GBWT;
-    // Construct GBWT with only capital letters, and LAST
+    string GBWT[256]; 
+    GBWT['A'].resize(boss.n_nodes, '0');
+    GBWT['C'].resize(boss.n_nodes, '0');
+    GBWT['G'].resize(boss.n_nodes, '0');
+    GBWT['T'].resize(boss.n_nodes, '0');
+    string F_column;
+    int kmer_index = 0;
     for(auto& keyval : kmers) {
         cout << keyval.first << " " << keyval.second << endl;
-        char A_bit = '0';
-        char C_bit = '0';
-        char G_bit = '0';
-        char T_bit = '0';
         for(char c : keyval.second.second){
-            if(c == 'A') A_bit = '1';
-            if(c == 'C') C_bit = '1';
-            if(c == 'G') G_bit = '1';
-            if(c == 'T') T_bit = '1';
-            GBWT += c;
+            GBWT[c][kmer_index] = '1';
+            F_column += c;
         }
-        GBWT_A += A_bit;
-        GBWT_C += C_bit;
-        GBWT_G += G_bit;
-        GBWT_T += T_bit;
+        kmer_index++;
     }
 
-    boss.GBWT_A = GBWT_A;
-    boss.GBWT_C = GBWT_C;
-    boss.GBWT_G = GBWT_G;
-    boss.GBWT_T = GBWT_T;
+    boss.GBWT['A'] = GBWT['A'];
+    boss.GBWT['C'] = GBWT['C'];
+    boss.GBWT['G'] = GBWT['G'];
+    boss.GBWT['T'] = GBWT['T'];
 
     // Add minus marks to GBWT
-    string F_column = GBWT; // TODO HERE
     std::sort(F_column.begin(), F_column.end());
     map<char,int> labels_seen;
     int F_index = 0;
     vector<int> counts(256);
-    for(char c : GBWT) counts[c]++; // Will subtract minus-characters below
+    for(char c : F_column) counts[c]++; // Will subtract minus-characters below
     for(auto& keyval : kmers) {
         int indegree = keyval.second.first.size();        
         char c = F_column[F_index];
         if(c != '$'){ // Add minuses, but not for dollars
             for(int i = 1; i < indegree; i++){ // All but the first in-edge
-                switch(c){
-                    // Here we read from GBWT_A but modify boss.GBWT_A. This is intentional to avoid messing up selects while we do it
-                    case 'A':
-                        boss.GBWT_A[Select(GBWT_A, '1', labels_seen[c] + i + 1)] = '0'; // Turn off the bit
-                        counts['A']--;
-                        break;
-                    case 'C':
-                        boss.GBWT_C[Select(GBWT_C, '1', labels_seen[c] + i + 1)] = '0'; // Turn off the bit
-                        counts['C']--;
-                        break;
-                    case 'G':
-                        boss.GBWT_G[Select(GBWT_G, '1', labels_seen[c] + i + 1)] = '0'; // Turn off the bit
-                        counts['G']--;
-                        break;
-                    case 'T':
-                        boss.GBWT_T[Select(GBWT_T, '1', labels_seen[c] + i + 1)] = '0'; // Turn off the bit
-                        counts['T']--;
-                        break;
-                }
+                boss.GBWT[c][Select(GBWT[c], '1', labels_seen[c] + i + 1)] = '0'; // Turn off the bit
+                counts[c]--;
             }
         }
         labels_seen[c] += indegree;
@@ -176,11 +155,10 @@ SelectFreeBOSS construct(const vector<string>& input, int k){
 
     boss.C = char_counts_to_C_array(counts);
 
-    cout << GBWT << endl;
-    cout << boss.GBWT_A << endl;
-    cout << boss.GBWT_C << endl;
-    cout << boss.GBWT_G << endl;
-    cout << boss.GBWT_T << endl;
+    cout << GBWT['A'] << endl;
+    cout << GBWT['C'] << endl;
+    cout << GBWT['G'] << endl;
+    cout << GBWT['T'] << endl;
     cout << boss.C << endl;    
     return boss;
 
@@ -192,25 +170,8 @@ int search(SelectFreeBOSS& boss, const string& kmer){
     int node_right = boss.n_nodes-1;
     for(int i = 0; i < kmer.size(); i++){
         char c = kmer[i];
-        switch(c){
-            case 'A':
-                node_left = boss.C[c] + Rank(boss.GBWT_A, '1', node_left);
-                node_right = boss.C[c] + Rank(boss.GBWT_A, '1', node_right+1) - 1;
-                break;
-            case 'C':
-                node_left = boss.C[c] + Rank(boss.GBWT_C, '1', node_left);
-                node_right = boss.C[c] + Rank(boss.GBWT_C, '1', node_right+1) - 1;
-                break;
-            case 'G':
-                node_left = boss.C[c] + Rank(boss.GBWT_G, '1', node_left);
-                node_right = boss.C[c] + Rank(boss.GBWT_G, '1', node_right+1) - 1;
-                break;
-            case 'T':
-                node_left = boss.C[c] + Rank(boss.GBWT_T, '1', node_left);
-                node_right = boss.C[c] + Rank(boss.GBWT_T, '1', node_right+1) - 1;
-                break;
-
-        }
+        node_left = boss.C[c] + Rank(boss.GBWT[c], '1', node_left);
+        node_right = boss.C[c] + Rank(boss.GBWT[c], '1', node_right+1) - 1;
         if(node_left > node_right) return -1; // Not found
     }
     assert(node_left == node_right);
