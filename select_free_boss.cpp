@@ -7,10 +7,12 @@
 
 using namespace std;
 
-struct BOSS{
+struct SelectFreeBOSS{
 
-    string GBWT; // Generalized BWT
-    string LAST; // Bit vector 'last'
+    string GBWT_A; // Bit vector
+    string GBWT_C; // Bit vector
+    string GBWT_G; // Bit vector
+    string GBWT_T; // Bit vector
     vector<int> C; // C-array (cumulative character counts)
     int n_nodes;
 
@@ -74,7 +76,7 @@ vector<int> char_counts_to_C_array(const vector<int>& counts){
 
 // Edge-centric definition.
 // k is the length of node labels.
-BOSS construct(const vector<string>& input, int k){
+SelectFreeBOSS construct(const vector<string>& input, int k){
     map<string, pair<set<char>, set<char>>, colex_compare> kmers; // k-mer -> (incoming labels, outgoing labels)
 
     // TODO: ensure that root node exists
@@ -98,7 +100,7 @@ BOSS construct(const vector<string>& input, int k){
         }
     }
 
-    BOSS boss;
+    SelectFreeBOSS boss;
     boss.n_nodes = kmers.size();
 
     // Add dollars
@@ -109,73 +111,126 @@ BOSS construct(const vector<string>& input, int k){
         }
     }
 
+    string GBWT_A, GBWT_C, GBWT_G, GBWT_T, GBWT;
     // Construct GBWT with only capital letters, and LAST
     for(auto& keyval : kmers) {
         cout << keyval.first << " " << keyval.second << endl;
-        for(char c : keyval.second.second) boss.GBWT += c;
-        while(boss.LAST.size()+1 < boss.GBWT.size()) boss.LAST += '0';
-        boss.LAST += '1';
+        char A_bit = '0';
+        char C_bit = '0';
+        char G_bit = '0';
+        char T_bit = '0';
+        for(char c : keyval.second.second){
+            if(c == 'A') A_bit = '1';
+            if(c == 'C') C_bit = '1';
+            if(c == 'G') G_bit = '1';
+            if(c == 'T') T_bit = '1';
+            GBWT += c;
+        }
+        GBWT_A += A_bit;
+        GBWT_C += C_bit;
+        GBWT_G += G_bit;
+        GBWT_T += T_bit;
     }
 
+    boss.GBWT_A = GBWT_A;
+    boss.GBWT_C = GBWT_C;
+    boss.GBWT_G = GBWT_G;
+    boss.GBWT_T = GBWT_T;
+
     // Add minus marks to GBWT
-    string F_column = boss.GBWT;
+    string F_column = GBWT; // TODO HERE
     std::sort(F_column.begin(), F_column.end());
-    vector<bool> minus_marks(boss.GBWT.size());
     map<char,int> labels_seen;
     int F_index = 0;
+    vector<int> counts(256);
+    for(char c : GBWT) counts[c]++; // Will subtract minus-characters below
     for(auto& keyval : kmers) {
         int indegree = keyval.second.first.size();        
         char c = F_column[F_index];
         if(c != '$'){ // Add minuses, but not for dollars
             for(int i = 1; i < indegree; i++){ // All but the first in-edge
-                minus_marks[Select(boss.GBWT, c, labels_seen[c] + i + 1)] = 1; // Mark the corresponding out-edge
+                switch(c){
+                    // Here we read from GBWT_A but modify boss.GBWT_A. This is intentional to avoid messing up selects while we do it
+                    case 'A':
+                        boss.GBWT_A[Select(GBWT_A, '1', labels_seen[c] + i + 1)] = '0'; // Turn off the bit
+                        counts['A']--;
+                        break;
+                    case 'C':
+                        boss.GBWT_C[Select(GBWT_C, '1', labels_seen[c] + i + 1)] = '0'; // Turn off the bit
+                        counts['C']--;
+                        break;
+                    case 'G':
+                        boss.GBWT_G[Select(GBWT_G, '1', labels_seen[c] + i + 1)] = '0'; // Turn off the bit
+                        counts['G']--;
+                        break;
+                    case 'T':
+                        boss.GBWT_T[Select(GBWT_T, '1', labels_seen[c] + i + 1)] = '0'; // Turn off the bit
+                        counts['T']--;
+                        break;
+                }
             }
         }
         labels_seen[c] += indegree;
         F_index += indegree;
     }
 
-    // Apply minus marks
-    for(int i = 0; i < boss.GBWT.size(); i++)
-        if(minus_marks[i]) boss.GBWT[i] = tolower(boss.GBWT[i]);
-
-    vector<int> counts(256);
-    for(char c : boss.GBWT) counts[c]++;
     boss.C = char_counts_to_C_array(counts);
 
-    cout << boss.GBWT << endl;
+    cout << GBWT << endl;
+    cout << boss.GBWT_A << endl;
+    cout << boss.GBWT_C << endl;
+    cout << boss.GBWT_G << endl;
+    cout << boss.GBWT_T << endl;
     cout << boss.C << endl;    
-    cout << boss.LAST << endl;
     return boss;
 
 }
 
-int search(BOSS& boss, const string& kmer){
+
+int search(SelectFreeBOSS& boss, const string& kmer){
     int node_left = 0;
     int node_right = boss.n_nodes-1;
     for(int i = 0; i < kmer.size(); i++){
-        int GBWT_left = node_left == 0 ? 0 : Select(boss.LAST, '1', node_left) + 1; // End of previous node +1.
-        int GBWT_right = Select(boss.LAST, '1', node_right+1);
         char c = kmer[i];
-        node_left = boss.C[c] + Rank(boss.GBWT, c, GBWT_left);
-        node_right = boss.C[c] + Rank(boss.GBWT, c, GBWT_right+1) - 1;
+        switch(c){
+            case 'A':
+                node_left = boss.C[c] + Rank(boss.GBWT_A, '1', node_left);
+                node_right = boss.C[c] + Rank(boss.GBWT_A, '1', node_right+1) - 1;
+                break;
+            case 'C':
+                node_left = boss.C[c] + Rank(boss.GBWT_C, '1', node_left);
+                node_right = boss.C[c] + Rank(boss.GBWT_C, '1', node_right+1) - 1;
+                break;
+            case 'G':
+                node_left = boss.C[c] + Rank(boss.GBWT_G, '1', node_left);
+                node_right = boss.C[c] + Rank(boss.GBWT_G, '1', node_right+1) - 1;
+                break;
+            case 'T':
+                node_left = boss.C[c] + Rank(boss.GBWT_T, '1', node_left);
+                node_right = boss.C[c] + Rank(boss.GBWT_T, '1', node_right+1) - 1;
+                break;
+
+        }
         if(node_left > node_right) return -1; // Not found
     }
     assert(node_left == node_right);
     return node_left;
 }
 
+
 int main(){
     vector<string> input = {"GAAGCCGCCATTCCATAGTGAGTCCTTCGTCTGTGACTATCTGTGCCAGATCGTCTAGCAAACTGCTGATCCAGTTTATCTCACCAAATTATAGCCGTACAGACCGAAATCTTAAGTCATATCACGCGACTAGGCTCAGCTTTATTTTTGTGGTCATGGGTTTTGGTCCGCCCGAGCGGTGCAGCCGATTAGGACCATGT"};
     int k = 4;
-    BOSS boss = construct(input, k);
+    SelectFreeBOSS boss = construct(input, k);
     set<string, colex_compare> kmers;
     for(string& S : input)
         for(int i = 0; i < S.size()-k+1; i++)
             kmers.insert(S.substr(i,k));
 
+
     for(string kmer : kmers){
         int result = search(boss, kmer);
         cout << result << endl;
     }
+
 }
