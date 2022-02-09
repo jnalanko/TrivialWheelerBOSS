@@ -11,6 +11,8 @@ struct BOSS{
 
     string GBWT; // Generalized BWT
     string LAST; // Bit vector 'last'
+    vector<int> C; // C-array (cumulative character counts)
+    int n_nodes;
 
 };
 
@@ -50,11 +52,34 @@ int64_t Select(const string& S, char symbol, int64_t count){
     }
 }
 
+vector<int> char_counts_to_C_array(const vector<int>& counts){
+    vector<int> C(256); // Cumulative sum of counts
+
+    // Compute cumulative sum of counts
+    for(int i = 0; i < (int)C.size(); i++){
+        C[i] = counts[i];
+        if(i > 0) C[i] += C[i-1];
+    }
+
+    // Shift C to the right by one because that's how it's defined
+    for(int i = 256-1; i >= 0; i--){
+        if(i == 0) C[i] = 0;
+        else C[i] = C[i-1];
+    }
+
+    return C;
+
+}
+
 
 // Edge-centric definition.
 // k is the length of node labels.
 BOSS construct(const vector<string>& input, int k){
     map<string, pair<set<char>, set<char>>, colex_compare> kmers; // k-mer -> (incoming labels, outgoing labels)
+
+    // TODO: ensure that root node exists
+    // TODO: avoid adding redundant dummies
+
     for(const string& S : input){
         assert(S.size() >= k);
 
@@ -74,6 +99,7 @@ BOSS construct(const vector<string>& input, int k){
     }
 
     BOSS boss;
+    boss.n_nodes = kmers.size();
 
     // Add dollars
     for(auto& keyval : kmers) {
@@ -113,13 +139,43 @@ BOSS construct(const vector<string>& input, int k){
     for(int i = 0; i < boss.GBWT.size(); i++)
         if(minus_marks[i]) boss.GBWT[i] = tolower(boss.GBWT[i]);
 
+    vector<int> counts(256);
+    for(char c : boss.GBWT) counts[c]++;
+    boss.C = char_counts_to_C_array(counts);
+
     cout << boss.GBWT << endl;
+    cout << boss.C << endl;    
     cout << boss.LAST << endl;
     return boss;
 
 }
 
+int search(BOSS& boss, const string& kmer){
+    int node_left = 0;
+    int node_right = boss.n_nodes-1;
+    for(int i = 0; i < kmer.size(); i++){
+        int GBWT_left = node_left == 0 ? 0 : Select(boss.LAST, '1', node_left) + 1; // End of previous node +1.
+        int GBWT_right = Select(boss.LAST, '1', node_right+1);
+        char c = kmer[i];
+        node_left = boss.C[c] + Rank(boss.GBWT, c, GBWT_left);
+        node_right = boss.C[c] + Rank(boss.GBWT, c, GBWT_right+1) - 1;
+        if(node_left > node_right) return -1; // Not found
+    }
+    assert(node_left == node_right);
+    return node_left;
+}
+
 int main(){
     vector<string> input = {"TACGACGTCGACT"};
-    construct(input, 3);
+    BOSS boss = construct(input, 3);
+    vector<string> kmers = {"CGA", "GAC", "TAC", "GTC", "ACG", "TCG", "ACT", "CGT"};
+    vector<int> colex_ranks = {1,3,4,5,6,7,9,10};
+    for(int i = 0; i < kmers.size(); i++){
+        int result = search(boss, kmers[i]);
+        if(result != colex_ranks[i]){
+            cerr << "Error: k-mer " << kmers[i] << " gave wrong answer (" << result << " vs " << colex_ranks[i] << endl;
+        } else{
+            cout << colex_ranks[i] << " " << result << endl;
+        }
+    }
 }
