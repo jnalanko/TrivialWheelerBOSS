@@ -155,10 +155,10 @@ SelectFreeBOSS construct(const vector<string>& input, int k){
 
     boss.C = char_counts_to_C_array(counts);
 
-    cout << GBWT['A'] << endl;
-    cout << GBWT['C'] << endl;
-    cout << GBWT['G'] << endl;
-    cout << GBWT['T'] << endl;
+    cout << "GBWT[\'A\'] = " << GBWT['A'] << endl;
+    cout << "GBWT[\'C\'] = " << GBWT['C'] << endl;
+    cout << "GBWT[\'G\'] = " << GBWT['G'] << endl;
+    cout << "GBWT[\'T\'] = " << GBWT['T'] << endl;
     cout << boss.C << endl;    
     return boss;
 
