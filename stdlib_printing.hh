@@ -6,7 +6,14 @@
 #include <set>
 #include <iostream>
 
-using namespace std;
+using std::set;
+using std::map;
+using std::vector;
+using std::unordered_map;
+using std::ostream;
+using std::pair;
+using std::multiset;
+using std::string;
 
 
 template <typename Structure, typename Function>
