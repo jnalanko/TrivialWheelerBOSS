@@ -22,16 +22,14 @@ struct SelectFreeBOSS{
   int n_nodes;
 };
 
-struct colex_compare {
-  // true if S is colexicographically-smaller than T
-  bool operator()(const string& S, const string& T) const {
-    for (int i_s = S.size() - 1, i_t = T.size() - 1;; --i_s, --i_t){
-      // One of the strings is a suffix of the other. Return the shorter.
-      if(i_s < 0 || i_t < 0) return S.size() < T.size();
-      if(S[i_s] != T[i_t]) return S[i_s] < T[i_t];
-    }
+// true if S is colexicographically-smaller than T
+bool colex_compare(const string& S, const string& T) {
+  for (int i_s = S.size() - 1, i_t = T.size() - 1;; --i_s, --i_t){
+    // One of the strings is a suffix of the other. Return the shorter.
+    if(i_s < 0 || i_t < 0) return S.size() < T.size();
+    if(S[i_s] != T[i_t]) return S[i_s] < T[i_t];
   }
-};
+}
 
 // Counts the number of occurrence of symbol in array[0..position)
 int64_t Rank(const string& S, char symbol, int64_t position){
@@ -76,7 +74,7 @@ vector<int> construct_C(const vector<int>& counts){
 // Edge-centric definition.
 // k is the length of node labels.
 SelectFreeBOSS construct(const vector<string>& input, int k){
-  map<string, std::pair<set<char>, set<char>>, colex_compare> kmers; // k-mer -> (incoming labels, outgoing labels)
+  map<string, std::pair<set<char>, set<char>>, decltype(colex_compare)*> kmers(colex_compare); // k-mer -> (incoming labels, outgoing labels)
 
   // TODO: ensure that root node exists
   // TODO: avoid adding redundant dummies
@@ -179,7 +177,7 @@ int main(){
   vector<string> input = {"GAAGCCGCCATTCCATAGTGAGTCCTTCGTCTGTGACTATCTGTGCCAGATCGTCTAGCAAACTGCTGATCCAGTTTATCTCACCAAATTATAGCCGTACAGACCGAAATCTTAAGTCATATCACGCGACTAGGCTCAGCTTTATTTTTGTGGTCATGGGTTTTGGTCCGCCCGAGCGGTGCAGCCGATTAGGACCATGT"};
   int k = 4;
   SelectFreeBOSS boss = construct(input, k);
-  set<string, colex_compare> kmers;
+  set<string, decltype(colex_compare)*> kmers(colex_compare);
   for(string& S : input)
     for(int i = 0; i < S.size()-k+1; i++)
       kmers.insert(S.substr(i,k));
