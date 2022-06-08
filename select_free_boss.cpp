@@ -33,7 +33,7 @@ bool colex_compare(const string& S, const string& T) {
 }
 
 // Counts the number of occurrence of symbol in array[0..position)
-int64_t Rank(const string& S, char symbol, int64_t position){
+int64_t rank(const string& S, char symbol, int64_t position){
   int64_t ans = 0;
   for(int64_t i = 0; i < position; ++i)
     if(S[i] == symbol) ++ans;
@@ -42,8 +42,7 @@ int64_t Rank(const string& S, char symbol, int64_t position){
 
 // Returns position i such that array[i] == symbol and
 // symbol occurs `count` times in array[0..i]
-// Using capital S in the name because select conflicts with the standard library
-int64_t Select(const string& S, char symbol, int64_t count){
+int64_t select(const string& S, char symbol, int64_t count){
   int64_t occurrences_seen = 0;
   for(int64_t i = 0; i < S.size(); ++i){
     if(S[i] == symbol) occurrences_seen++;
@@ -140,7 +139,7 @@ SelectFreeBOSS::SelectFreeBOSS(const vector<string>& input, int k){
     char c = F_column[F_index];
     if(c != '$'){ // Add minuses, but not for dollars
       for(int i = 1; i < indegree; i++){ // All but the first in-edge
-        this->SBWT[c][Select(SBWT[c], '1', labels_seen[c] + i + 1)] = '0'; // Turn off the bit
+        this->SBWT[c][select(SBWT[c], '1', labels_seen[c] + i + 1)] = '0'; // Turn off the bit
         counts[c]--;
       }
     }
@@ -162,8 +161,8 @@ int search(SelectFreeBOSS& boss, const string& kmer){
   int left = 0;
   int right = boss.node_count - 1;
   for(auto& c: kmer){
-    left = boss.C[c] + Rank(boss.SBWT[c], '1', left);
-    right = boss.C[c] + Rank(boss.SBWT[c], '1', right + 1) - 1;
+    left = boss.C[c] + rank(boss.SBWT[c], '1', left);
+    right = boss.C[c] + rank(boss.SBWT[c], '1', right + 1) - 1;
     if(left > right) return -1; // Not found
   }
   assert(left == right);
