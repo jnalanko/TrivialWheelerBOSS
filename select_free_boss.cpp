@@ -159,15 +159,15 @@ SelectFreeBOSS::SelectFreeBOSS(const vector<string>& input, int k){
 
 
 int search(SelectFreeBOSS& boss, const string& kmer){
-  int node_left = 0;
-  int node_right = boss.n_nodes - 1;
+  int left = 0;
+  int right = boss.n_nodes - 1;
   for(auto& c: kmer){
-    node_left = boss.C[c] + Rank(boss.SBWT[c], '1', node_left);
-    node_right = boss.C[c] + Rank(boss.SBWT[c], '1', node_right+1) - 1;
-    if(node_left > node_right) return -1; // Not found
+    left = boss.C[c] + Rank(boss.SBWT[c], '1', left);
+    right = boss.C[c] + Rank(boss.SBWT[c], '1', right + 1) - 1;
+    if(left > right) return -1; // Not found
   }
-  assert(node_left == node_right);
-  return node_left;
+  assert(left == right);
+  return left;
 }
 
 
@@ -182,8 +182,8 @@ set<string, decltype(colex_compare)*> extract_kmers(vector<string>& input, int k
 int main(){
   vector<string> input = {"GAAGCCGCCATTCCATAGTGAGTCCTTCGTCTGTGACTATCTGTGCCAGATCGTCTAGCAAACTGCTGATCCAGTTTATCTCACCAAATTATAGCCGTACAGACCGAAATCTTAAGTCATATCACGCGACTAGGCTCAGCTTTATTTTTGTGGTCATGGGTTTTGGTCCGCCCGAGCGGTGCAGCCGATTAGGACCATGT"};
   int k = 4;
-  auto kmers = extract_kmers(input, k);
   SelectFreeBOSS boss(input, k);
+  auto kmers = extract_kmers(input, k);
   for(string kmer : kmers)
     cout << search(boss, kmer) << '\n';
 }
