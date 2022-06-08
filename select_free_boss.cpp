@@ -1,11 +1,18 @@
 #include <iostream>
+#include <set>
+#include <vector>
 #include <map>
 #include <string>
 #include <cassert>
 #include <algorithm>
 #include "stdlib_printing.hh"
 
-using namespace std;
+using std::string;
+using std::vector;
+using std::map;
+using std::set;
+using std::cout;
+using std::endl;
 
 struct SelectFreeBOSS{
   // One bit vector for each character. Can be empty bit vector if the character does not occur
@@ -17,7 +24,7 @@ struct SelectFreeBOSS{
 
 struct colex_compare {
   // true if S is colexicographically-smaller than T
-  bool operator()(const std::string& S, const std::string& T) const {
+  bool operator()(const string& S, const string& T) const {
     for (int i_s = S.size() - 1, i_t = T.size() - 1;; --i_s, --i_t){
       // One of the strings is a suffix of the other. Return the shorter.
       if(i_s < 0 || i_t < 0) return S.size() < T.size();
@@ -39,10 +46,11 @@ int64_t Rank(const string& S, char symbol, int64_t position){
 // Using capital S in the name because select conflicts with the standard library
 int64_t Select(const string& S, char symbol, int64_t count){
   int64_t occurrences_seen = 0;
-  for(int64_t i = 0; ; i++){
+  for(int64_t i = 0; i < S.size(); ++i){
     if(S[i] == symbol) occurrences_seen++;
     if(occurrences_seen == count) return i;
   }
+  throw std::range_error("Select reached end of string before finding the requested number of symbols");
 }
 
 vector<int> char_counts_to_C_array(const vector<int>& counts){
@@ -67,7 +75,7 @@ vector<int> char_counts_to_C_array(const vector<int>& counts){
 // Edge-centric definition.
 // k is the length of node labels.
 SelectFreeBOSS construct(const vector<string>& input, int k){
-  map<string, pair<set<char>, set<char>>, colex_compare> kmers; // k-mer -> (incoming labels, outgoing labels)
+  map<string, std::pair<set<char>, set<char>>, colex_compare> kmers; // k-mer -> (incoming labels, outgoing labels)
 
   // TODO: ensure that root node exists
   // TODO: avoid adding redundant dummies
