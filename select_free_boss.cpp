@@ -16,8 +16,8 @@ using std::endl;
 
 struct SelectFreeBOSS{
   // One bit vector for each character. Can be empty bit vector if the character does not occur
-  string GBWT[256];
-  // GBWT['A'], GBWT['C'], GBWT['G'], GBWT['T'] are all bit vectors
+  string SBWT[256];
+  // SBWT['A'], SBWT['C'], SBWT['G'], SBWT['T'] are all bit vectors
   vector<int> C; // C-array (cumulative character counts)
   int n_nodes;
 };
@@ -108,28 +108,28 @@ SelectFreeBOSS construct(const vector<string>& input, int k){
     }
   }
 
-  string GBWT[256];
-  GBWT['A'].resize(boss.n_nodes, '0');
-  GBWT['C'].resize(boss.n_nodes, '0');
-  GBWT['G'].resize(boss.n_nodes, '0');
-  GBWT['T'].resize(boss.n_nodes, '0');
+  string SBWT[256];
+  SBWT['A'].resize(boss.n_nodes, '0');
+  SBWT['C'].resize(boss.n_nodes, '0');
+  SBWT['G'].resize(boss.n_nodes, '0');
+  SBWT['T'].resize(boss.n_nodes, '0');
   string F_column;
   int kmer_index = 0;
   for(auto& keyval : kmers) {
     cout << keyval.first << " " << keyval.second << endl;
     for(char c : keyval.second.second){
-      GBWT[c][kmer_index] = '1';
+      SBWT[c][kmer_index] = '1';
       F_column += c;
     }
     kmer_index++;
   }
 
-  boss.GBWT['A'] = GBWT['A'];
-  boss.GBWT['C'] = GBWT['C'];
-  boss.GBWT['G'] = GBWT['G'];
-  boss.GBWT['T'] = GBWT['T'];
+  boss.SBWT['A'] = SBWT['A'];
+  boss.SBWT['C'] = SBWT['C'];
+  boss.SBWT['G'] = SBWT['G'];
+  boss.SBWT['T'] = SBWT['T'];
 
-  // Add minus marks to GBWT
+  // Add minus marks to SBWT
   std::sort(F_column.begin(), F_column.end());
   map<char,int> labels_seen;
   int F_index = 0;
@@ -140,7 +140,7 @@ SelectFreeBOSS construct(const vector<string>& input, int k){
     char c = F_column[F_index];
     if(c != '$'){ // Add minuses, but not for dollars
       for(int i = 1; i < indegree; i++){ // All but the first in-edge
-        boss.GBWT[c][Select(GBWT[c], '1', labels_seen[c] + i + 1)] = '0'; // Turn off the bit
+        boss.SBWT[c][Select(SBWT[c], '1', labels_seen[c] + i + 1)] = '0'; // Turn off the bit
         counts[c]--;
       }
     }
@@ -150,10 +150,10 @@ SelectFreeBOSS construct(const vector<string>& input, int k){
 
   boss.C = construct_C(counts);
 
-  cout << "GBWT[\'A\'] = " << boss.GBWT['A'] << endl;
-  cout << "GBWT[\'C\'] = " << boss.GBWT['C'] << endl;
-  cout << "GBWT[\'G\'] = " << boss.GBWT['G'] << endl;
-  cout << "GBWT[\'T\'] = " << boss.GBWT['T'] << endl;
+  cout << "SBWT[\'A\'] = " << boss.SBWT['A'] << endl;
+  cout << "SBWT[\'C\'] = " << boss.SBWT['C'] << endl;
+  cout << "SBWT[\'G\'] = " << boss.SBWT['G'] << endl;
+  cout << "SBWT[\'T\'] = " << boss.SBWT['T'] << endl;
   cout << boss.C << endl;
   return boss;
 }
@@ -164,8 +164,8 @@ int search(SelectFreeBOSS& boss, const string& kmer){
   int node_right = boss.n_nodes-1;
   for(int i = 0; i < kmer.size(); i++){
     char c = kmer[i];
-    node_left = boss.C[c] + Rank(boss.GBWT[c], '1', node_left);
-    node_right = boss.C[c] + Rank(boss.GBWT[c], '1', node_right+1) - 1;
+    node_left = boss.C[c] + Rank(boss.SBWT[c], '1', node_left);
+    node_right = boss.C[c] + Rank(boss.SBWT[c], '1', node_right+1) - 1;
     if(node_left > node_right) return -1; // Not found
   }
   assert(node_left == node_right);
