@@ -46,27 +46,27 @@ void print_first_second(ostream& os, const T& item) {
 
 template <typename S, typename T>
 ostream& operator<<(ostream& os, const unordered_map<S,T>& v){
-  return print_all<typeof(v)>(os, "[", v, print_first_second<pair<S, T>>, "]");
+  return print_all<decltype(v)>(os, "[", v, print_first_second<pair<S, T>>, "]");
 }
 
 template <typename S, typename T>
 ostream& operator<<(ostream& os, const map<S,T>& v){
-  return print_all<typeof(v)>(os, "{", v, print_first_second<pair<S, T>>, "}");
+  return print_all<decltype(v)>(os, "{", v, print_first_second<pair<S, T>>, "}");
 }
 
 template <typename T>
 ostream& operator<<(ostream& os, const vector<T>& v){
-  return print_all<typeof(v)>(os, "[", v, print_individual<T>, "]");
+  return print_all<decltype(v)>(os, "[", v, print_individual<T>, "]");
 }
 
 template <typename T>
 ostream& operator<<(ostream& os, const set<T>& v){
-  return print_all<typeof(v)>(os, "[", v, print_individual<T>, "]");
+  return print_all<decltype(v)>(os, "[", v, print_individual<T>, "]");
 }
 
 template <typename T>
 ostream& operator<<(ostream& os, const multiset<T>& v){
-  return print_all<typeof(v)>(os, "[", v, print_individual<T>, "]");
+  return print_all<decltype(v)>(os, "[", v, print_individual<T>, "]");
 }
 
 template <typename S, typename T>
