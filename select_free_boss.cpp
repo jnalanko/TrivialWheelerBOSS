@@ -29,8 +29,8 @@ struct colex_compare {
 // Counts the number of occurrence of symbol in array[0..position)
 int64_t Rank(const string& S, char symbol, int64_t position){
   int64_t ans = 0;
-  for(int64_t i = 0; i < position; i++)
-    if(S[i] == symbol) ans++;
+  for(int64_t i = 0; i < position; ++i)
+    if(S[i] == symbol) ++ans;
   return ans;
 }
 
