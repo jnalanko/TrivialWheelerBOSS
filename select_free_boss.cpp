@@ -20,7 +20,7 @@ public:
   string SBWT[256];
   // SBWT['A'], SBWT['C'], SBWT['G'], SBWT['T'] are all bit vectors
   vector<int> C; // C-array (cumulative character counts)
-  int n_nodes;
+  int node_count;
 };
 
 // true if S is colexicographically-smaller than T
@@ -98,7 +98,7 @@ SelectFreeBOSS::SelectFreeBOSS(const vector<string>& input, int k){
     }
   }
 
-  this->n_nodes = kmers.size();
+  this->node_count = kmers.size();
 
   // Add dollars
   for(auto& keyval : kmers) {
@@ -109,10 +109,10 @@ SelectFreeBOSS::SelectFreeBOSS(const vector<string>& input, int k){
   }
 
   string SBWT[256];
-  SBWT['A'].resize(this->n_nodes, '0');
-  SBWT['C'].resize(this->n_nodes, '0');
-  SBWT['G'].resize(this->n_nodes, '0');
-  SBWT['T'].resize(this->n_nodes, '0');
+  SBWT['A'].resize(this->node_count, '0');
+  SBWT['C'].resize(this->node_count, '0');
+  SBWT['G'].resize(this->node_count, '0');
+  SBWT['T'].resize(this->node_count, '0');
   string F_column;
   int kmer_index = 0;
   for(auto& keyval : kmers) {
@@ -160,7 +160,7 @@ SelectFreeBOSS::SelectFreeBOSS(const vector<string>& input, int k){
 
 int search(SelectFreeBOSS& boss, const string& kmer){
   int left = 0;
-  int right = boss.n_nodes - 1;
+  int right = boss.node_count - 1;
   for(auto& c: kmer){
     left = boss.C[c] + Rank(boss.SBWT[c], '1', left);
     right = boss.C[c] + Rank(boss.SBWT[c], '1', right + 1) - 1;
