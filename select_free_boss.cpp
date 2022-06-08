@@ -53,24 +53,25 @@ int64_t Select(const string& S, char symbol, int64_t count){
   throw std::range_error("Select reached end of string before finding the requested number of symbols");
 }
 
-vector<int> char_counts_to_C_array(const vector<int>& counts){
-  vector<int> C(256); // Cumulative sum of counts
-
-  // Compute cumulative sum of counts
-  for(int i = 0; i < (int)C.size(); i++){
-    C[i] = counts[i];
-    if(i > 0) C[i] += C[i-1];
-  }
-
-  // Shift C to the right by one because that's how it's defined
-  for(int i = 256-1; i >= 0; i--){
-    if(i == 0) C[i] = 0;
-    else C[i] = C[i-1];
-  }
-
+vector<int> cumulative_sum_of_counts(const vector<int>& counts) {
+  vector<int> C(counts);
+  for (int i = 1; i < C.size(); ++i)
+    C[i] += C[i-1];
   return C;
 }
 
+template <typename T>
+inline void shift_vector_to_the_right_by_1(vector<T>& v){
+  for(int i = v.size() - 1; i > 0; --i)
+    v[i] = v[i-1];
+  v[0] = 0;
+}
+
+vector<int> construct_C(const vector<int>& counts){
+  vector<int> C = cumulative_sum_of_counts(counts);
+  shift_vector_to_the_right_by_1(C); // we shift to follow the definition
+  return C;
+}
 
 // Edge-centric definition.
 // k is the length of node labels.
@@ -149,7 +150,7 @@ SelectFreeBOSS construct(const vector<string>& input, int k){
     F_index += indegree;
   }
 
-  boss.C = char_counts_to_C_array(counts);
+  boss.C = construct_C(counts);
 
   cout << "GBWT[\'A\'] = " << boss.GBWT['A'] << endl;
   cout << "GBWT[\'C\'] = " << boss.GBWT['C'] << endl;
