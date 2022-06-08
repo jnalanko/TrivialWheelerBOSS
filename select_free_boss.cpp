@@ -8,11 +8,9 @@
 using namespace std;
 
 struct SelectFreeBOSS{
-  string GBWT[256]; // One bit vector for each character. Can be empty bit vector if the character does not occur
-  //string GBWT_A; // Bit vector
-  //string GBWT_C; // Bit vector
-  //string GBWT_G; // Bit vector
-  //string GBWT_T; // Bit vector
+  // One bit vector for each character. Can be empty bit vector if the character does not occur
+  string GBWT[256];
+  // GBWT['A'], GBWT['C'], GBWT['G'], GBWT['T'] are all bit vectors
   vector<int> C; // C-array (cumulative character counts)
   int n_nodes;
 };
@@ -20,16 +18,10 @@ struct SelectFreeBOSS{
 struct colex_compare {
   // true if S is colexicographically-smaller than T
   bool operator()(const std::string& S, const std::string& T) const {
-    int i = 0;
-    while(true){
-      if(i == S.size() || i == T.size()){
-        // One of the strings is a suffix of the other. Return the shorter.
-        if(S.size() < T.size()) return true;
-        else return false;
-      }
-      if(S[S.size()-1-i] < T[T.size()-1-i]) return true;
-      if(S[S.size()-1-i] > T[T.size()-1-i]) return false;
-      i++;
+    for (int i_s = S.size() - 1, i_t = T.size() - 1;; --i_s, --i_t){
+      // One of the strings is a suffix of the other. Return the shorter.
+      if(i_s < 0 || i_t < 0) return S.size() < T.size();
+      if(S[i_s] != T[i_t]) return S[i_s] < T[i_t];
     }
   }
 };
